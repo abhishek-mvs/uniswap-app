@@ -17,13 +17,26 @@ const LOCAL_TOKEN_ADDRESS = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Exa
 export function SwapForm() {
   const { address } = useAccount();
   const [tokenAddress, setTokenAddress] = useState(LOCAL_TOKEN_ADDRESS);
-  const [outputAmount, setOutputAmount] = useState('');
   const [amount, setAmount] = useState('');
   const [isFromToken, setIsFromToken] = useState(true);
+  const [minExpectedAmount, setMinExpectedAmount] = useState(BigInt(0));
   
+  // Get output amount based on input
+  const { data: expectedAmount } = useReadContract({
+    address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
+    abi: EXCHANGE_ABI,
+    functionName: isFromToken ? 'getEthAmount' : 'getTokenAmount',
+    args: [parseEther(amount)],
+    query: {
+      enabled: Number(amount) > 0
+    }
+  });
+
   useEffect(() => {
-    handleGetOutputAmount();
-  }, [amount, tokenAddress]);
+    if (expectedAmount) {
+     handleGetOutputAmount();
+    }
+  }, [expectedAmount, amount, isFromToken]);
 
   // Get user's token balance
   const { data: tokenOwner } = useReadContract({
@@ -33,20 +46,31 @@ export function SwapForm() {
     args: [address],
   });
   console.log('User token balance:', tokenOwner);
-
+  
+  const { data: userEthBalance } = useBalance({
+    address: address as `0x${string}`,
+  });
+  console.log('User ETH balance:', userEthBalance);
   // Get ETH reserves in the exchange
   const { data: ethBalance } = useBalance({
     address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
   });
   console.log('Exchange ETH reserves:', ethBalance);
 
-  // Get token reserves in the exchange
-  const { data: tokenAllowance } = useReadContract({
+  const { data: tokenReserve } = useReadContract({
     address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
     abi: EXCHANGE_ABI,
     functionName: 'getReserve',
   });
-  console.log('Exchange token reserves:', tokenAllowance);
+  console.log('Token reserves:', tokenReserve);
+  // Get token reserves in the exchange
+  const { data: tokenAllowance } = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: TOKEN_ABI,
+    functionName: 'allowance',
+    args: [address, LOCAL_EXCHANGE_ADDRESS],
+  });
+  console.log('Token allowance:', tokenAllowance);
 
   // Calculate exchange rate if both reserves are available
   const exchangeRate = ethBalance && tokenAllowance ? 
@@ -55,32 +79,59 @@ export function SwapForm() {
   
   const { writeContract } = useWriteContract();
 
-  const handleSwap = () => {
-    if (!amount || !tokenAddress) return;
+  const handleApprove = () => {
+    if (!amount || !tokenAddress || !LOCAL_EXCHANGE_ADDRESS) return;
 
-    const swapConfig = {
-      address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
-      abi: EXCHANGE_ABI,
-      functionName: isFromToken ? 'tokenToEthSwap' : 'ethToTokenSwap',
-      args: [parseEther(amount)],
-      value: isFromToken ? undefined : parseEther(amount),
+    const approveConfig = {
+      address: tokenAddress as `0x${string}`,
+      abi: TOKEN_ABI,
+      functionName: 'approve',
+      args: [LOCAL_EXCHANGE_ADDRESS, parseEther(amount)],
     };
 
+    writeContract(approveConfig);
+  };  
+
+  const handleSwap = async () => {
+    if (!minExpectedAmount || !tokenAddress || !amount) return;
+
+    // For token to ETH swap, check and handle approval first
+    if (isFromToken) {
+      console.log('Token to ETH swap');
+      const parsedAmount = parseEther(amount);
+      if (!tokenAllowance || (tokenAllowance as bigint) < parsedAmount) {
+        handleApprove();
+        return;
+      }
+    }
+
+    let swapConfig;
+    if (isFromToken) {
+      swapConfig = {
+        address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
+        abi: EXCHANGE_ABI,
+        functionName: 'tokenToEthSwap',
+        args: [parseEther(amount), minExpectedAmount],
+      };
+    }
+    else {
+      swapConfig = {
+        address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
+        abi: EXCHANGE_ABI,
+        functionName: 'ethToTokenSwap',
+        args: [minExpectedAmount],
+        value: parseEther(amount),
+      };
+    }
+    console.log('Swap config:', swapConfig);
     writeContract(swapConfig);
   };
 
   const handleGetOutputAmount = () => {
-    if (!amount || !tokenAddress) return;
-
-    const { data: outputAmount } = useReadContract({
-      address: LOCAL_EXCHANGE_ADDRESS as `0x${string}`,
-      abi: EXCHANGE_ABI,
-      functionName: isFromToken ? 'getEthAmount' : 'getTokenAmount',
-      args: [parseEther(amount)],
-    });
-
-    console.log('Output amount:', outputAmount);
-    
+    if (!expectedAmount || !tokenAddress) return;
+    const minOutput = ((expectedAmount as bigint) * BigInt(99)) / BigInt(100);
+    setMinExpectedAmount(minOutput);
+    console.log('Output amount:', expectedAmount);
   };
   
   
@@ -121,26 +172,79 @@ export function SwapForm() {
         </Button>
       </div>
 
-      {tokenOwner !== undefined && (
-        <p className="text-sm text-gray-500">
-          Token Balance: {formatEther(tokenOwner as bigint)}
-        </p>
+      {amount && minExpectedAmount !== BigInt(0) && (
+        <div className="p-3 bg-gray-100 rounded-md">
+          <p className="text-sm font-medium">
+            You will receive approximately: {formatEther(minExpectedAmount as bigint)} {isFromToken ? 'ETH' : 'Tokens'}
+          </p>
+        </div>
       )}
-      {ethBalance !== undefined && tokenAllowance !== undefined && (
-        <>
-          <p className="text-sm text-gray-500">
-            Exchange ETH Reserve: {formatEther(ethBalance.value)}
+
+      <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+        <h3 className="font-medium text-gray-900">Your Balances</h3>
+        {userEthBalance && (
+          <p className="text-sm text-gray-700">
+            ETH Balance: {formatEther(userEthBalance.value)} ETH
           </p>
-          <p className="text-sm text-gray-500">
-            Exchange Token Reserve: {formatEther(tokenAllowance as bigint)}
+        )}
+        {tokenOwner !== undefined && (
+          <p className="text-sm text-gray-700">
+            Token Balance: {formatEther(tokenOwner as bigint)} Tokens
           </p>
-          {exchangeRate && (
-            <p className="text-sm text-gray-500">
-              Exchange Rate: 1 Token = {exchangeRate.toFixed(6)} ETH
+        )}
+        
+        <h3 className="font-medium text-gray-900 pt-2">Token Allowance</h3>
+        {tokenAllowance !== undefined && (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-700">
+              Current Allowance: {formatEther(tokenAllowance as bigint)} Tokens
             </p>
-          )}
-        </>
-      )}
+            <Button
+              onClick={handleApprove}
+              variant="outline"
+              className="w-full"
+            >
+              Approve Tokens for Trading
+            </Button>
+          </div>
+        )}
+        
+        <h3 className="font-medium text-gray-900 pt-2">Price</h3>
+        {ethBalance && tokenReserve && (
+          <div className="space-y-1">
+            <p className="text-sm text-gray-700">
+              1 Token = {(Number(formatEther(ethBalance.value)) / Number(formatEther(tokenReserve as bigint))).toFixed(6)} ETH
+            </p>
+            <p className="text-sm text-gray-700">
+              1 ETH = {(Number(formatEther(tokenReserve as bigint)) / Number(formatEther(ethBalance.value))).toFixed(6)} Tokens
+            </p>
+          </div>
+        )}
+        
+        <h3 className="font-medium text-gray-900 pt-2">Liquidity Pool</h3>
+        {ethBalance !== undefined && (
+          <p className="text-sm text-gray-700">
+            ETH Reserve: {formatEther(ethBalance.value)} ETH
+          </p>
+        )}
+        {tokenReserve !== undefined && (
+          <p className="text-sm text-gray-700">
+            Token Reserve: {formatEther(tokenReserve as bigint)} Tokens
+          </p>
+        )}
+        
+        {exchangeRate && (
+          <div className="pt-2">
+            <h3 className="font-medium text-gray-900">Exchange Rate</h3>
+            <p className="text-sm text-gray-700">
+              1 Token = {exchangeRate.toFixed(6)} ETH
+            </p>
+            <p className="text-sm text-gray-700">
+              1 ETH = {(1 / exchangeRate).toFixed(6)} Tokens
+            </p>
+          </div>
+        )}
+      </div>
 
       <Button
         onClick={handleSwap}
