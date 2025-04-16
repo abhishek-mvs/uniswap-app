@@ -1,0 +1,8 @@
+1. I am creating a uniswap in etherium to ERC20 token
+2. The tokens will be traded in base currency
+3. We are going to use the Exchange.tsx ABI smart contract 
+4. User have 4 options, 
+a. User can provide liquidity along with the base currency
+b. User can swap the token from base to ERC20 or ERC20 to base. 
+c. User can remove liquidity
+5. Create a simple app where users can do these above operations. 
