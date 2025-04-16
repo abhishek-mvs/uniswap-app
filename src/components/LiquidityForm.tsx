@@ -10,8 +10,9 @@ import { EXCHANGE_ABI } from '../../Exchange';
 import { TOKEN_ABI } from '../../Token';
 import { FACTORY_ABI } from '../../Factory';
 
-const LOCAL_EXCHANGE_ADDRESS = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"; // Example local address
-const LOCAL_TOKEN_ADDRESS = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Example local address
+// Local deployment addresses - update these with your deployed contract addresses
+const LOCAL_EXCHANGE_ADDRESS = process.env.NEXT_PUBLIC_EXCHANGE_ADDRESS;
+const LOCAL_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS;
 
 export function LiquidityForm() {
   const { address } = useAccount();

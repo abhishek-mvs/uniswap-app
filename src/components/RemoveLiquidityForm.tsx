@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { EXCHANGE_ABI } from '../../Exchange';
 import { FACTORY_ABI } from '../../Factory';
 
-const LOCAL_EXCHANGE_ADDRESS = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"; // Example local address
+// Local deployment addresses - update these with your deployed contract addresses
+const LOCAL_EXCHANGE_ADDRESS = process.env.NEXT_PUBLIC_EXCHANGE_ADDRESS;
 
 export function RemoveLiquidityForm() {
   const { address } = useAccount();
