@@ -175,7 +175,7 @@ export function SwapForm() {
       {amount && minExpectedAmount !== BigInt(0) && (
         <div className="p-3 bg-gray-100 rounded-md">
           <p className="text-sm font-medium">
-            You will receive approximately: {formatEther(minExpectedAmount as bigint)} {isFromToken ? 'ETH' : 'Tokens'}
+            You will receive approximately: {formatEther(minExpectedAmount as bigint)} {isFromToken ? 'Sepolia' : 'Tokens'}
           </p>
         </div>
       )}
@@ -184,7 +184,7 @@ export function SwapForm() {
         <h3 className="font-medium text-gray-900">Your Balances</h3>
         {userEthBalance && (
           <p className="text-sm text-gray-700">
-            ETH Balance: {formatEther(userEthBalance.value)} ETH
+            Sepolia Balance: {formatEther(userEthBalance.value)} Sepolia
           </p>
         )}
         {tokenOwner !== undefined && (
@@ -213,10 +213,10 @@ export function SwapForm() {
         {ethBalance !== undefined && tokenReserve !== undefined && (
           <div className="space-y-1">
             <p className="text-sm text-gray-700">
-              1 Token = {(Number(formatEther(ethBalance.value)) / Number(formatEther(tokenReserve as bigint))).toFixed(6)} ETH
+              1 Token = {(Number(formatEther(ethBalance.value)) / Number(formatEther(tokenReserve as bigint))).toFixed(6)} Sepolia
             </p>
             <p className="text-sm text-gray-700">
-              1 ETH = {(Number(formatEther(tokenReserve as bigint)) / Number(formatEther(ethBalance.value))).toFixed(6)} Tokens
+              1 Sepolia = {(Number(formatEther(tokenReserve as bigint)) / Number(formatEther(ethBalance.value))).toFixed(6)} Tokens
             </p>
           </div>
         )}
@@ -224,7 +224,7 @@ export function SwapForm() {
         <h3 className="font-medium text-gray-900 pt-2">Liquidity Pool</h3>
         {ethBalance !== undefined && (
           <p className="text-sm text-gray-700">
-            ETH Reserve: {formatEther(ethBalance.value)} ETH
+            Sepolia Reserve: {formatEther(ethBalance.value)} Sepolia
           </p>
         )}
         {tokenReserve !== undefined && (
@@ -237,10 +237,10 @@ export function SwapForm() {
           <div className="pt-2">
             <h3 className="font-medium text-gray-900">Exchange Rate</h3>
             <p className="text-sm text-gray-700">
-              1 Token = {exchangeRate.toFixed(6)} ETH
+              1 Token = {exchangeRate.toFixed(6)} Sepolia
             </p>
             <p className="text-sm text-gray-700">
-              1 ETH = {(1 / exchangeRate).toFixed(6)} Tokens
+              1 Sepolia = {(1 / exchangeRate).toFixed(6)} Tokens
             </p>
           </div>
         )}

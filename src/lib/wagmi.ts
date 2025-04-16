@@ -7,8 +7,8 @@ export const config = createConfig({
   connectors: [injected()],
   transports: {
     [mainnet.id]: http(),
-    [sepolia.id]: http(),
-    [hardhat.id]: http('http://127.0.0.1:8545'),
+    [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL!),
+    [hardhat.id]: http(process.env.NEXT_PUBLIC_HARDHAT_RPC_URL!),
   },
   ssr: true,
 }) 

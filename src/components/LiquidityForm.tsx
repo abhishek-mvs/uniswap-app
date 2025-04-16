@@ -100,7 +100,7 @@ export function LiquidityForm() {
       </div>
 
       <div className="space-y-2">
-        <Label>ETH Amount</Label>
+        <Label>Sepolia Amount</Label>
         <Input
           type="number"
           value={ethAmount}
@@ -133,7 +133,7 @@ export function LiquidityForm() {
 
       {liquidity !== undefined && (
         <p className="text-sm text-gray-500">
-          Your Liquidity Position: {formatEther(liquidity as bigint)} LP tokens
+          Your Liquidity Position: {formatEther(liquidity as bigint)} CHCIA-LP tokens
         </p>
       )}
 
