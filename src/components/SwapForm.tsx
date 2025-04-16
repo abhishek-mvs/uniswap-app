@@ -210,7 +210,7 @@ export function SwapForm() {
         )}
         
         <h3 className="font-medium text-gray-900 pt-2">Price</h3>
-        {ethBalance && tokenReserve && (
+        {ethBalance !== undefined && tokenReserve !== undefined && (
           <div className="space-y-1">
             <p className="text-sm text-gray-700">
               1 Token = {(Number(formatEther(ethBalance.value)) / Number(formatEther(tokenReserve as bigint))).toFixed(6)} ETH

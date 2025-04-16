@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useContractRead, useContractWrite } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,35 +9,40 @@ import { Label } from '@/components/ui/label';
 import { EXCHANGE_ABI } from '../../Exchange';
 import { FACTORY_ABI } from '../../Factory';
 
+const LOCAL_EXCHANGE_ADDRESS = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"; // Example local address
+
 export function RemoveLiquidityForm() {
   const { address } = useAccount();
-  const [tokenAddress, setTokenAddress] = useState('');
+  const [tokenAddress, setTokenAddress] = useState(LOCAL_EXCHANGE_ADDRESS);
   const [liquidityAmount, setLiquidityAmount] = useState('');
 
   // Get exchange address from factory
-  const { data: exchangeAddress } = useContractRead({
-    address: process.env.NEXT_PUBLIC_FACTORY_ADDRESS as `0x${string}`,
-    abi: FACTORY_ABI,
-    functionName: 'getExchange',
-    args: [tokenAddress],
-  });
+  const exchangeAddress = LOCAL_EXCHANGE_ADDRESS;
+  const { writeContract } = useWriteContract();
 
   // Get liquidity balance
-  const { data: liquidityBalance } = useContractRead({
+  const { data: liquidityBalance } = useReadContract({
     address: exchangeAddress as `0x${string}`,
     abi: EXCHANGE_ABI,
     functionName: 'balanceOf',
     args: [address],
-    enabled: !!exchangeAddress && !!address,
   });
-
+  
+  console.log('Liquidity balance:', liquidityBalance);
   // Remove liquidity
-  const { write: removeLiquidity } = useContractWrite({
-    address: exchangeAddress as `0x${string}`,
-    abi: EXCHANGE_ABI,
-    functionName: 'removeLiquidity',
-    args: [parseEther(liquidityAmount)],
-  });
+  const handleRemoveLiquidity = () => {
+    if (!liquidityAmount || !tokenAddress || !exchangeAddress) return;
+
+    const removeLiquidityConfig = {
+      address: exchangeAddress as `0x${string}`,
+      abi: EXCHANGE_ABI,
+      functionName: 'removeLiquidity',
+      args: [parseEther(liquidityAmount)],
+    };
+
+    writeContract(removeLiquidityConfig);
+  };
+  
 
   return (
     <div className="space-y-4">
@@ -60,14 +65,14 @@ export function RemoveLiquidityForm() {
         />
       </div>
 
-      {liquidityBalance && (
+      {liquidityBalance !== undefined && (
         <p className="text-sm text-gray-500">
           Liquidity Balance: {formatEther(liquidityBalance as bigint)}
         </p>
       )}
 
       <Button
-        onClick={() => removeLiquidity()}
+        onClick={handleRemoveLiquidity}
         disabled={!liquidityAmount || !tokenAddress || !exchangeAddress}
       >
         Remove Liquidity

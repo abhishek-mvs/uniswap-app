@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useBalance } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,15 @@ export function LiquidityForm() {
     args: [address, exchangeAddress],
   });
   console.log('Token allowance:', tokenAllowance);
+
+  const { data: liquidity } = useReadContract({
+    address: exchangeAddress as `0x${string}`,
+    abi: EXCHANGE_ABI,
+    functionName: 'balanceOf',
+    args: [address],
+  });
+  console.log('Liquidity:', liquidity);
+
   const handleApprove = () => {
     if (!tokenAmount || !tokenAddress || !exchangeAddress) return;
 
@@ -109,15 +118,21 @@ export function LiquidityForm() {
         />
       </div>
 
-      {tokenBalance && (
+      {tokenBalance !== undefined && (
         <p className="text-sm text-gray-500">
           Token Balance: {formatEther(tokenBalance as bigint)}
         </p>
       )}
 
-      {tokenAllowance && (
+      {tokenAllowance !== undefined && (
         <p className="text-sm text-gray-500">
           Token Allowance: {formatEther(tokenAllowance as bigint)}
+        </p>
+      )}
+
+      {liquidity !== undefined && (
+        <p className="text-sm text-gray-500">
+          Your Liquidity Position: {formatEther(liquidity as bigint)} LP tokens
         </p>
       )}
 
