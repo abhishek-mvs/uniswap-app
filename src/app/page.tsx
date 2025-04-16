@@ -24,8 +24,8 @@ export default function Home() {
           <Tabs defaultValue="swap" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="swap">Swap</TabsTrigger>
-              <TabsTrigger value="liquidity">Liquidity</TabsTrigger>
-              <TabsTrigger value="remove">Remove</TabsTrigger>
+              <TabsTrigger value="liquidity">Add Liquidity</TabsTrigger>
+              <TabsTrigger value="remove">Remove Liquidity</TabsTrigger>
             </TabsList>
             <TabsContent value="swap">
               <Card className="p-6">
